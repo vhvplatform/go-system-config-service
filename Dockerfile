@@ -1,22 +1,22 @@
 # Build stage
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25.5-alpine AS builder
+
+# Install build dependencies
+RUN apk --no-cache add ca-certificates git
 
 WORKDIR /app
 
 # Copy go mod files
-COPY go.work go.work
-COPY pkg/go.mod pkg/go.sum ./pkg/
-COPY services/system-config-service/go.mod services/system-config-service/go.sum ./services/system-config-service/
+COPY go.mod go.sum ./
 
 # Download dependencies
-RUN cd services/system-config-service && go mod download
+RUN go mod download
 
 # Copy source code
-COPY pkg/ ./pkg/
-COPY services/system-config-service/ ./services/system-config-service/
+COPY . .
 
 # Build the service
-RUN cd services/system-config-service && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bin/system-config-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bin/system-config-service ./cmd/main.go
 
 # Runtime stage
 FROM alpine:latest

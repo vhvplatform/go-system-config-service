@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,4 +22,15 @@ type AppComponent struct {
 	UpdatedAt   time.Time              `json:"updated_at" bson:"updated_at"`
 	CreatedBy   string                 `json:"created_by" bson:"created_by"`
 	UpdatedBy   string                 `json:"updated_by" bson:"updated_by"`
+}
+
+// Validate validates the app component data
+func (a *AppComponent) Validate() error {
+	if a.TenantID == "" {
+		return errors.New("tenant_id is required")
+	}
+	if a.Code == "" {
+		return errors.New("code is required")
+	}
+	return nil
 }

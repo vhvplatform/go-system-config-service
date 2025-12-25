@@ -1,0 +1,144 @@
+@startuml Multi-Environment Configuration
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title Multi-Environment Configuration Management
+
+package "Configuration Service" {
+    component [Config Manager] as Manager
+    component [Environment\nResolver] as Resolver
+    component [Inheritance\nEngine] as Inheritance
+    component [Override\nMerger] as Merger
+}
+
+package "Development Environment" {
+    cloud "Dev Config Store" as DevStore {
+        file "base.yaml" as DevBase
+        file "dev.yaml" as DevOverride
+        file "secrets-dev.enc" as DevSecrets
+    }
+    node "Dev Services" as DevServices
+}
+
+package "Staging Environment" {
+    cloud "Staging Config Store" as StagingStore {
+        file "base.yaml" as StagingBase
+        file "staging.yaml" as StagingOverride
+        file "secrets-staging.enc" as StagingSecrets
+    }
+    node "Staging Services" as StagingServices
+}
+
+package "Production Environment" {
+    cloud "Prod Config Store" as ProdStore {
+        file "base.yaml" as ProdBase
+        file "production.yaml" as ProdOverride
+        file "secrets-prod.enc" as ProdSecrets
+    }
+    node "Prod Services" as ProdServices
+}
+
+package "Shared Configuration" {
+    database "MongoDB" as DB {
+        collections "Global Configs\nEnvironment Configs\nTenant Configs"
+    }
+    database "Redis Cache" as Cache
+}
+
+' Configuration flow for Dev
+Manager --> Resolver : Get config for "dev"
+Resolver --> DevStore : Load dev configs
+Resolver --> DB : Load shared configs
+DevStore --> Inheritance : Base + Dev override
+Inheritance --> Merger : Merge configurations
+Merger --> DevServices : Final dev config
+
+' Configuration flow for Staging
+Manager --> Resolver : Get config for "staging"
+Resolver --> StagingStore : Load staging configs
+Resolver --> DB : Load shared configs
+StagingStore --> Inheritance : Base + Staging override
+Inheritance --> Merger : Merge configurations
+Merger --> StagingServices : Final staging config
+
+' Configuration flow for Production
+Manager --> Resolver : Get config for "production"
+Resolver --> ProdStore : Load prod configs
+Resolver --> DB : Load shared configs
+ProdStore --> Inheritance : Base + Prod override
+Inheritance --> Merger : Merge configurations
+Merger --> ProdServices : Final prod config
+
+' Cache interactions
+Merger --> Cache : Cache merged config
+
+note right of Resolver
+  **Environment Resolution**
+  1. Check ENV variable
+  2. Check deployment context
+  3. Default to development
+  4. Load environment-specific configs
+end note
+
+note right of Inheritance
+  **Configuration Hierarchy**
+  Base Config (Lowest Priority)
+    ↓
+  Global Config
+    ↓
+  Environment Config
+    ↓
+  Tenant Config
+    ↓
+  User Override (Highest Priority)
+end note
+
+note bottom of Merger
+  **Merge Strategy**
+  - Deep merge objects
+  - Array concatenation or replacement
+  - Null values remove keys
+  - Environment variables override
+  - Secrets take precedence
+end note
+
+note as N1
+  **Configuration Priority**
+  
+  1. Runtime overrides (highest)
+  2. Environment secrets
+  3. Environment-specific config
+  4. Global configuration
+  5. Base/default values (lowest)
+  
+  Each layer can override
+  previous layer values
+end note
+
+note as N2
+  **Environment-Specific Settings**
+  
+  **Development:**
+  - Verbose logging
+  - Debug mode enabled
+  - Local database
+  - Mock external services
+  - Relaxed security
+  
+  **Staging:**
+  - Moderate logging
+  - Pre-prod database
+  - Test payment gateways
+  - Similar to production
+  
+  **Production:**
+  - Error-only logging
+  - Production database
+  - Real external services
+  - Strict security
+  - Performance optimized
+  - High availability
+end note
+
+@enduml

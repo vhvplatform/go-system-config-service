@@ -1,0 +1,49 @@
+# Development Environment Configuration
+# Overrides base configuration for local development
+
+environment: "development"
+
+service:
+  http_port: 8085
+  grpc_port: 50055
+
+database:
+  uri: "mongodb://localhost:27017"
+  database: "saas_framework_dev"
+  max_connections: 10
+  log_queries: true
+  
+cache:
+  host: "localhost"
+  port: 6379
+  db: 0
+  ttl_default: "1m"
+  
+logging:
+  level: "debug"
+  output: "stdout"
+  development: true
+  
+api:
+  cors:
+    allowed_origins:
+      - "http://localhost:3000"
+      - "http://localhost:3001"
+  
+  rate_limiting:
+    requests_per_second: 1000
+    
+security:
+  jwt:
+    secret: "dev-secret-key-change-in-production"
+  
+  disable_auth: false
+
+monitoring:
+  tracing:
+    sample_rate: 1.0
+
+watch:
+  enabled: true
+  config_dir: "./config"
+  debounce_ms: 1000

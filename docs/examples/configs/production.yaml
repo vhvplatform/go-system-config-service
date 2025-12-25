@@ -1,0 +1,99 @@
+# Production Environment Configuration
+# High-performance production configuration
+
+environment: "production"
+
+service:
+  http_port: 8085
+  grpc_port: 50055
+
+database:
+  uri: "${MONGODB_URI}"
+  database: "saas_framework"
+  max_connections: 200
+  min_connections: 20
+  enable_ssl: true
+  replica_set: "rs0"
+  read_preference: "primaryPreferred"
+  write_concern: "majority"
+  
+cache:
+  host: "${REDIS_HOST}"
+  port: 6379
+  password: "${REDIS_PASSWORD}"
+  db: 0
+  pool_size: 100
+  max_retries: 3
+  sentinel_enabled: true
+  
+logging:
+  level: "error"
+  output: "json"
+  
+api:
+  cors:
+    allowed_origins:
+      - "https://app.example.com"
+      - "https://admin.example.com"
+  
+  rate_limiting:
+    requests_per_second: 100
+    burst_size: 200
+    
+  timeouts:
+    read_timeout: "30s"
+    write_timeout: "30s"
+    idle_timeout: "300s"
+    
+security:
+  jwt:
+    secret: "${JWT_SECRET}"
+  
+  encryption:
+    key_path: "/secrets/encryption-key"
+    vault_address: "${VAULT_ADDR}"
+    vault_token: "${VAULT_TOKEN}"
+  
+  tls:
+    enabled: true
+    cert_file: "/certs/server.crt"
+    key_file: "/certs/server.key"
+
+monitoring:
+  metrics:
+    enabled: true
+    port: 9090
+  
+  tracing:
+    sample_rate: 0.1
+    jaeger_endpoint: "${JAEGER_ENDPOINT}"
+    
+  alerting:
+    enabled: true
+    pagerduty_key: "${PAGERDUTY_KEY}"
+    slack_webhook: "${SLACK_WEBHOOK_URL}"
+
+watch:
+  enabled: true
+  config_dir: "/etc/config"
+  
+backup:
+  enabled: true
+  schedule: "0 0 * * *"  # Daily at midnight
+  retention_days: 90
+  s3_bucket: "${BACKUP_S3_BUCKET}"
+  
+performance:
+  max_concurrent_requests: 1000
+  connection_pool_size: 200
+  enable_compression: true
+  
+resilience:
+  circuit_breaker:
+    enabled: true
+    threshold: 5
+    timeout: "30s"
+  
+  retry:
+    max_attempts: 3
+    backoff: "exponential"

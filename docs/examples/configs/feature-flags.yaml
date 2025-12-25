@@ -1,0 +1,80 @@
+# Feature Flags Configuration Example
+# Dynamic feature management for gradual rollouts
+
+features:
+  # New dashboard rollout
+  new_dashboard:
+    enabled: true
+    rollout_percentage: 10
+    allowed_tenants:
+      - "tenant-alpha"
+      - "tenant-beta"
+    description: "Next generation dashboard UI"
+    created_at: "2024-01-01T00:00:00Z"
+    updated_at: "2024-01-15T10:00:00Z"
+    owner: "product-team"
+  
+  # Advanced analytics
+  advanced_analytics:
+    enabled: false
+    rollout_percentage: 0
+    beta_access: true
+    allowed_users:
+      - "user-123"
+      - "user-456"
+    description: "Advanced analytics and reporting features"
+    requirements:
+      - "premium_subscription"
+  
+  # Multi-region support
+  multi_region:
+    enabled: true
+    rollout_percentage: 100
+    regions:
+      - "us-east-1"
+      - "us-west-2"
+      - "eu-west-1"
+      - "ap-southeast-1"
+    description: "Multi-region deployment support"
+  
+  # Real-time notifications
+  realtime_notifications:
+    enabled: true
+    rollout_percentage: 50
+    channels:
+      - "websocket"
+      - "sse"
+    max_connections_per_user: 5
+    description: "Real-time push notifications"
+  
+  # AI-powered recommendations
+  ai_recommendations:
+    enabled: false
+    rollout_percentage: 0
+    in_development: true
+    estimated_release: "2024-Q2"
+    description: "AI-powered configuration recommendations"
+  
+  # Audit export
+  audit_export:
+    enabled: true
+    rollout_percentage: 100
+    formats:
+      - "json"
+      - "csv"
+      - "pdf"
+    max_records_per_export: 10000
+    description: "Export audit logs"
+  
+  # Two-factor authentication
+  two_factor_auth:
+    enabled: true
+    rollout_percentage: 100
+    methods:
+      - "totp"
+      - "sms"
+      - "email"
+    enforce_for_roles:
+      - "admin"
+      - "secret_manager"
+    description: "Two-factor authentication"

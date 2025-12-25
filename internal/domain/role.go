@@ -13,8 +13,8 @@ type Role struct {
 	Code        string             `json:"code" bson:"code"`
 	Name        string             `json:"name" bson:"name"`
 	Description string             `json:"description" bson:"description"`
-	IsSystem    bool               `json:"is_system" bson:"is_system"` // system roles can't be deleted
-	Level       int                `json:"level" bson:"level"`         // hierarchy level
+	IsSystem    bool               `json:"is_system" bson:"is_system"`     // system roles can't be deleted
+	Level       int                `json:"level" bson:"level"`             // hierarchy level
 	Permissions []string           `json:"permissions" bson:"permissions"` // permission codes
 	Status      string             `json:"status" bson:"status"`
 	CreatedAt   time.Time          `json:"created_at" bson:"created_at"`

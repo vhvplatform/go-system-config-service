@@ -76,11 +76,11 @@ func main() {
 	// Initialize repositories
 	appComponentRepo := repository.NewAppComponentRepository(mongoClient.Database())
 	countryRepo := repository.NewCountryRepository(mongoClient.Database())
-	
+
 	// Initialize services
 	appComponentService := service.NewAppComponentService(appComponentRepo, redisClient, log)
 	countryService := service.NewCountryService(countryRepo, redisClient, log)
-	
+
 	// Initialize handlers
 	appComponentHandler := handler.NewAppComponentHandler(appComponentService, log)
 	countryHandler := handler.NewCountryHandler(countryService, log)

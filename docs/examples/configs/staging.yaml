@@ -1,0 +1,59 @@
+# Staging Environment Configuration
+# Pre-production environment configuration
+
+environment: "staging"
+
+service:
+  http_port: 8085
+  grpc_port: 50055
+
+database:
+  uri: "mongodb://mongodb-staging:27017"
+  database: "saas_framework_staging"
+  max_connections: 50
+  enable_ssl: true
+  replica_set: "rs0-staging"
+  
+cache:
+  host: "redis-staging"
+  port: 6379
+  password: "${REDIS_PASSWORD}"
+  db: 0
+  pool_size: 20
+  
+logging:
+  level: "info"
+  output: "json"
+  
+api:
+  cors:
+    allowed_origins:
+      - "https://staging.example.com"
+      - "https://admin-staging.example.com"
+  
+  rate_limiting:
+    requests_per_second: 500
+    
+security:
+  jwt:
+    secret: "${JWT_SECRET}"
+  
+  encryption:
+    key_path: "/secrets/encryption-key"
+
+monitoring:
+  tracing:
+    sample_rate: 0.5
+    
+  alerting:
+    enabled: true
+    slack_webhook: "${SLACK_WEBHOOK_URL}"
+
+watch:
+  enabled: true
+  config_dir: "/etc/config"
+  
+backup:
+  enabled: true
+  schedule: "0 */6 * * *"  # Every 6 hours
+  retention_days: 30
