@@ -21,25 +21,6 @@ func (p *PaginationRequest) SetDefaults() {
 	}
 }
 
-// ListRequest represents a list request with pagination
-type ListRequest struct {
-	Page    int `form:"page" json:"page"`
-	PerPage int `form:"per_page" json:"per_page"`
-}
-
-// SetDefaults sets default values for list request
-func (l *ListRequest) SetDefaults() {
-	if l.Page < 1 {
-		l.Page = 1
-	}
-	if l.PerPage < 1 {
-		l.PerPage = 30
-	}
-	if l.PerPage > 100 {
-		l.PerPage = 100
-	}
-}
-
 // PaginationResponse represents pagination metadata
 type PaginationResponse struct {
 	Page       int   `json:"page"`

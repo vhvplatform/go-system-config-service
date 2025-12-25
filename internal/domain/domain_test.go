@@ -105,8 +105,8 @@ func TestAppComponent_Validation(t *testing.T) {
 	}
 }
 
-func TestListRequest_Defaults(t *testing.T) {
-	req := &ListRequest{
+func TestPaginationRequest_Defaults(t *testing.T) {
+	req := &PaginationRequest{
 		Page:    0,
 		PerPage: 0,
 	}
@@ -117,8 +117,8 @@ func TestListRequest_Defaults(t *testing.T) {
 	assert.Equal(t, 30, req.PerPage)
 }
 
-func TestListRequest_CustomPagination(t *testing.T) {
-	req := &ListRequest{
+func TestPaginationRequest_CustomPagination(t *testing.T) {
+	req := &PaginationRequest{
 		Page:    2,
 		PerPage: 50,
 	}
@@ -129,8 +129,8 @@ func TestListRequest_CustomPagination(t *testing.T) {
 	assert.Equal(t, 50, req.PerPage)
 }
 
-func TestListRequest_MaxPerPage(t *testing.T) {
-	req := &ListRequest{
+func TestPaginationRequest_MaxPerPage(t *testing.T) {
+	req := &PaginationRequest{
 		Page:    1,
 		PerPage: 200,
 	}
