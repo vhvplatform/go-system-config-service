@@ -1,0 +1,139 @@
+@startuml Hot Reload Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title Configuration Hot Reload Mechanism
+
+participant "Config File" as File
+participant "File Watcher\n(fsnotify)" as Watcher
+participant "Watch Service" as Watch
+participant "Config Service" as Service
+participant "Validation" as Validation
+participant "MongoDB" as DB
+participant "Redis Cache" as Redis
+participant "Observer" as Observer
+participant "RabbitMQ" as Queue
+participant "Subscribers\n(Microservices)" as Subscribers
+
+== Configuration Change Detection ==
+
+File -> Watcher: Config file modified
+activate Watcher
+Watcher -> Watch: Notify file change event
+activate Watch
+
+Watch -> Watch: Debounce changes\n(prevent multiple triggers)
+Watch -> Service: Load new configuration
+activate Service
+
+== Configuration Validation ==
+
+Service -> Validation: Validate config structure
+activate Validation
+Validation -> Validation: Check schema
+Validation -> Validation: Validate values
+Validation -> Validation: Check dependencies
+Validation --> Service: Validation result
+deactivate Validation
+
+alt Validation Failed
+    Service -> Watch: Return validation error
+    Watch -> Watcher: Log error, skip reload
+else Validation Success
+    
+    == Create Configuration Version ==
+    
+    Service -> DB: Save new config version
+    activate DB
+    DB -> DB: Create version record
+    DB -> DB: Set previous version as inactive
+    DB --> Service: Version saved
+    deactivate DB
+    
+    == Cache Update ==
+    
+    Service -> Redis: Invalidate old cache
+    activate Redis
+    Redis -> Redis: Delete old entries
+    Redis --> Service: Cache cleared
+    deactivate Redis
+    
+    Service -> Redis: Update with new config
+    activate Redis
+    Redis -> Redis: Set with TTL
+    Redis --> Service: Cache updated
+    deactivate Redis
+    
+    == Notify Subscribers ==
+    
+    Service -> Observer: Trigger config change event
+    activate Observer
+    Observer -> Queue: Publish change event
+    activate Queue
+    Queue -> Subscribers: Broadcast notification
+    activate Subscribers
+    
+    Subscribers -> Subscribers: Reload configuration
+    Subscribers -> Queue: Acknowledge
+    deactivate Subscribers
+    
+    Queue --> Observer: Event published
+    deactivate Queue
+    deactivate Observer
+    
+    Service --> Watch: Reload successful
+end
+
+Watch --> Watcher: Processing complete
+deactivate Watch
+deactivate Watcher
+deactivate Service
+
+== Rollback on Error (If Needed) ==
+
+alt Reload Failed on Subscriber
+    Subscribers -> Queue: Report failure
+    Queue -> Observer: Failure event
+    Observer -> Service: Trigger rollback
+    Service -> DB: Restore previous version
+    Service -> Redis: Update cache with old config
+    Service -> Observer: Notify rollback
+    Observer -> Queue: Publish rollback event
+    Queue -> Subscribers: Apply previous config
+end
+
+note over File, Watcher
+  **File Watching**
+  - Uses fsnotify library
+  - Monitors config directories
+  - Supports multiple file types
+  - Debouncing prevents spam
+end note
+
+note over Service, Validation
+  **Validation Process**
+  - Schema validation
+  - Type checking
+  - Business rules
+  - Dependency verification
+  - Backward compatibility
+end note
+
+note over DB
+  **Versioning**
+  - Every change is versioned
+  - Previous versions retained
+  - Audit trail maintained
+  - Rollback capability
+end note
+
+note over Observer, Queue
+  **Event-Driven Updates**
+  - Async notification
+  - Guaranteed delivery
+  - Subscriber acknowledgment
+  - Retry mechanism
+end note
+
+@enduml

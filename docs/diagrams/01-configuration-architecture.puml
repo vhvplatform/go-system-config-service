@@ -1,0 +1,123 @@
+@startuml Configuration Architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title System Configuration Service - Architecture Overview
+
+package "API Layer" {
+    component [HTTP Server\n(Gin)] as HTTP
+    component [gRPC Server] as GRPC
+    component [Health Checks] as Health
+}
+
+package "Handler Layer" {
+    component [Config Handler] as Handler
+    component [Country Handler] as CountryHandler
+    component [App Component\nHandler] as AppHandler
+}
+
+package "Service Layer" {
+    component [Config Service] as Service
+    component [Validation Service] as Validation
+    component [Encryption Service] as Encryption
+    component [Audit Service] as Audit
+    component [Watch Service] as WatchService
+}
+
+package "Repository Layer" {
+    component [Config Repository] as Repository
+    component [Version Repository] as VersionRepo
+    component [Audit Repository] as AuditRepo
+}
+
+package "External Systems" {
+    database "MongoDB\n(Primary Storage)" as MongoDB
+    database "Redis\n(Cache Layer)" as Redis
+    queue "RabbitMQ\n(Event Streaming)" as RabbitMQ
+    cloud "File System\n(Config Files)" as FileSystem
+}
+
+package "Patterns" {
+    component [Observer Pattern\n(Config Changes)] as Observer
+    component [Strategy Pattern\n(Config Sources)] as Strategy
+    component [Factory Pattern\n(Config Loaders)] as Factory
+}
+
+' API Layer connections
+HTTP --> Handler
+HTTP --> CountryHandler
+HTTP --> AppHandler
+GRPC --> Handler
+GRPC --> CountryHandler
+GRPC --> AppHandler
+
+' Handler to Service
+Handler --> Service
+CountryHandler --> Service
+AppHandler --> Service
+
+' Service Layer connections
+Service --> Validation
+Service --> Encryption
+Service --> Audit
+Service --> Repository
+Service --> Redis
+Service --> Observer
+Service --> WatchService
+
+' Repository Layer connections
+Repository --> MongoDB
+Repository --> Redis
+VersionRepo --> MongoDB
+AuditRepo --> MongoDB
+
+' Watch Service connections
+WatchService --> FileSystem
+WatchService --> MongoDB
+WatchService --> Observer
+WatchService --> RabbitMQ
+
+' Observer Pattern connections
+Observer --> RabbitMQ
+
+' Strategy Pattern connections
+Strategy --> FileSystem
+Strategy --> MongoDB
+Strategy --> Redis
+
+note right of MongoDB
+  - Configuration storage
+  - Version history
+  - Audit logs
+  - Multi-tenancy support
+end note
+
+note right of Redis
+  - Cache frequently accessed configs
+  - TTL-based expiration
+  - Cache invalidation on updates
+  - Distributed locking
+end note
+
+note right of RabbitMQ
+  - Config change events
+  - Cross-service notifications
+  - Hot reload triggers
+  - Async processing
+end note
+
+note bottom of Observer
+  Notifies subscribers when
+  configuration changes occur
+end note
+
+note bottom of Strategy
+  Multiple config sources:
+  - File-based
+  - Database
+  - Environment variables
+  - Remote (Consul, etcd)
+end note
+
+@enduml

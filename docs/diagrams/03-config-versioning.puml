@@ -1,0 +1,220 @@
+@startuml Config Versioning
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title Configuration Versioning & Rollback
+
+actor "Admin User" as Admin
+participant "API Gateway" as API
+participant "Config Service" as Service
+participant "Version Service" as Version
+participant "Validation" as Validation
+participant "MongoDB" as DB
+participant "Redis" as Cache
+participant "Audit Log" as Audit
+
+== Create New Configuration Version ==
+
+Admin -> API: POST /configs\n{new config data}
+activate API
+API -> Service: Create config
+activate Service
+
+Service -> Validation: Validate new config
+activate Validation
+Validation -> Validation: Validate schema
+Validation -> Validation: Check constraints
+Validation --> Service: ✓ Valid
+deactivate Validation
+
+Service -> Version: Create new version
+activate Version
+Version -> DB: Insert new version
+activate DB
+
+DB -> DB: Generate version ID\n(v1, v2, v3...)
+DB -> DB: Set status = "draft"
+DB -> DB: Store timestamp
+DB -> DB: Store author info
+DB --> Version: Version created
+deactivate DB
+
+Version --> Service: Version ID: v3
+deactivate Version
+
+Service -> Audit: Log config creation
+activate Audit
+Audit -> DB: Store audit entry
+deactivate Audit
+
+Service --> API: Config created (v3)
+deactivate Service
+API --> Admin: 201 Created\n{version: "v3"}
+deactivate API
+
+== Activate Configuration Version ==
+
+Admin -> API: POST /configs/v3/activate
+activate API
+API -> Service: Activate version v3
+activate Service
+
+Service -> DB: Get version v3
+activate DB
+DB --> Service: Version v3 data
+deactivate DB
+
+Service -> Validation: Validate before activation
+activate Validation
+Validation --> Service: ✓ Valid
+deactivate Validation
+
+Service -> DB: Begin transaction
+activate DB
+DB -> DB: Set v2 status = "inactive"
+DB -> DB: Set v3 status = "active"
+DB -> DB: Update activated_at timestamp
+DB -> DB: Commit transaction
+DB --> Service: Version activated
+deactivate DB
+
+Service -> Cache: Invalidate cache
+activate Cache
+Cache -> Cache: Clear old config
+Cache --> Service: Cache cleared
+deactivate Cache
+
+Service -> Audit: Log activation
+activate Audit
+Audit -> DB: Store audit entry
+deactivate Audit
+
+Service --> API: Version v3 activated
+deactivate Service
+API --> Admin: 200 OK
+deactivate API
+
+== View Version History ==
+
+Admin -> API: GET /configs/history
+activate API
+API -> Version: Get version history
+activate Version
+
+Version -> DB: Query versions
+activate DB
+DB --> Version: [v3(active), v2(inactive), v1(inactive)]
+deactivate DB
+
+Version --> API: Version list
+deactivate Version
+API --> Admin: 200 OK\n[versions with metadata]
+deactivate API
+
+== Rollback to Previous Version ==
+
+Admin -> API: POST /configs/rollback\n{target_version: "v2"}
+activate API
+API -> Service: Rollback to v2
+activate Service
+
+Service -> Version: Get version v2
+activate Version
+Version -> DB: Query version v2
+activate DB
+DB --> Version: Version v2 data
+deactivate DB
+Version --> Service: v2 configuration
+deactivate Version
+
+Service -> Validation: Validate v2 compatibility
+activate Validation
+Validation -> Validation: Check if v2 is compatible\nwith current system
+Validation --> Service: ✓ Compatible
+deactivate Validation
+
+Service -> DB: Begin transaction
+activate DB
+DB -> DB: Create new version v4\n(copy of v2)
+DB -> DB: Set v3 status = "rolled_back"
+DB -> DB: Set v4 status = "active"
+DB -> DB: Mark as "rollback from v3"
+DB -> DB: Commit transaction
+DB --> Service: Rollback complete
+deactivate DB
+
+Service -> Cache: Update cache with v4 (v2 config)
+activate Cache
+Cache -> Cache: Clear cache
+Cache -> Cache: Load v4 config
+Cache --> Service: Cache updated
+deactivate Cache
+
+Service -> Audit: Log rollback
+activate Audit
+Audit -> DB: Store rollback audit entry
+Audit -> Audit: Record reason
+Audit -> Audit: Record user
+deactivate Audit
+
+Service --> API: Rollback successful (v4)
+deactivate Service
+API --> Admin: 200 OK\n{new_version: "v4", rollback_from: "v3"}
+deactivate API
+
+== Compare Versions ==
+
+Admin -> API: GET /configs/compare?v1=v2&v2=v3
+activate API
+API -> Version: Compare versions
+activate Version
+
+Version -> DB: Get v2 and v3
+activate DB
+DB --> Version: Both versions
+deactivate DB
+
+Version -> Version: Calculate diff
+Version -> Version: Identify changes
+Version --> API: Diff result
+deactivate Version
+
+API --> Admin: 200 OK\n{diff: {...}}
+deactivate API
+
+note over DB
+  **Version Storage Schema**
+  {
+    version_id: "v3",
+    config_data: {...},
+    status: "active|inactive|draft|rolled_back",
+    created_at: timestamp,
+    activated_at: timestamp,
+    created_by: user_id,
+    rollback_from: version_id (optional),
+    checksum: hash,
+    tags: [...]
+  }
+end note
+
+note over Audit
+  **Audit Trail**
+  - All changes logged
+  - User identification
+  - Timestamps
+  - Change reasons
+  - Rollback history
+  - Access logs
+end note
+
+note over Service
+  **Versioning Strategy**
+  - Sequential versions
+  - Immutable history
+  - Rollback creates new version
+  - Supports branching
+  - Retention policies
+end note
+
+@enduml

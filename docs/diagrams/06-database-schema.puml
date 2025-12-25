@@ -1,0 +1,296 @@
+@startuml Database Schema
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title MongoDB Database Schema
+
+entity "configs" {
+  * _id : ObjectId
+  --
+  * tenant_id : string
+  * config_key : string
+  * config_value : object
+  * environment : enum
+  * status : enum
+  version : int
+  checksum : string
+  schema_version : string
+  * created_at : timestamp
+  * updated_at : timestamp
+  created_by : string
+  updated_by : string
+  tags : array
+  metadata : object
+  --
+  Indexes:
+  - (tenant_id, config_key, environment) [unique]
+  - (tenant_id, environment, status)
+  - (updated_at)
+  - (tags)
+}
+
+entity "config_versions" {
+  * _id : ObjectId
+  --
+  * config_id : ObjectId
+  * tenant_id : string
+  * version_number : int
+  config_data : object
+  * status : enum
+  checksum : string
+  change_summary : string
+  * created_at : timestamp
+  created_by : string
+  activated_at : timestamp
+  rollback_from : ObjectId
+  approval_status : enum
+  approved_by : string
+  approved_at : timestamp
+  --
+  Indexes:
+  - (config_id, version_number)
+  - (config_id, status)
+  - (tenant_id, created_at)
+  - (status, created_at)
+}
+
+entity "config_audit_log" {
+  * _id : ObjectId
+  --
+  * config_id : ObjectId
+  * tenant_id : string
+  * action : enum
+  * user_id : string
+  user_email : string
+  ip_address : string
+  user_agent : string
+  old_value : object
+  new_value : object
+  version_from : int
+  version_to : int
+  * timestamp : timestamp
+  reason : string
+  status : enum
+  error_message : string
+  --
+  Indexes:
+  - (config_id, timestamp)
+  - (tenant_id, timestamp)
+  - (user_id, timestamp)
+  - (action, timestamp)
+  - (timestamp) [TTL: 2 years]
+}
+
+entity "secrets" {
+  * _id : ObjectId
+  --
+  * tenant_id : string
+  * secret_key : string
+  * encrypted_value : string
+  * key_id : string
+  * algorithm : string
+  iv : string
+  hmac : string
+  * environment : enum
+  version : int
+  * created_at : timestamp
+  * updated_at : timestamp
+  expires_at : timestamp
+  last_rotated_at : timestamp
+  rotation_policy : object
+  created_by : string
+  metadata : object
+  --
+  Indexes:
+  - (tenant_id, secret_key, environment) [unique]
+  - (tenant_id, environment)
+  - (expires_at)
+  - (last_rotated_at)
+}
+
+entity "secret_access_log" {
+  * _id : ObjectId
+  --
+  * secret_id : ObjectId
+  * tenant_id : string
+  * user_id : string
+  service_name : string
+  * action : enum
+  * timestamp : timestamp
+  ip_address : string
+  success : boolean
+  error_message : string
+  --
+  Indexes:
+  - (secret_id, timestamp)
+  - (tenant_id, timestamp)
+  - (user_id, timestamp)
+  - (timestamp) [TTL: 1 year]
+}
+
+entity "app_components" {
+  * _id : ObjectId
+  --
+  * tenant_id : string
+  * code : string
+  * name : object
+  description : object
+  icon : string
+  * status : enum
+  config : object
+  dependencies : array
+  * created_at : timestamp
+  * updated_at : timestamp
+  --
+  Indexes:
+  - (tenant_id, code) [unique]
+  - (tenant_id, status)
+}
+
+entity "countries" {
+  * _id : ObjectId
+  --
+  * code : string
+  * name : object
+  dial_code : string
+  currency_code : string
+  flag_emoji : string
+  * status : enum
+  * created_at : timestamp
+  * updated_at : timestamp
+  --
+  Indexes:
+  - (code) [unique]
+  - (status)
+}
+
+entity "watch_subscriptions" {
+  * _id : ObjectId
+  --
+  * subscriber_id : string
+  * service_name : string
+  * tenant_id : string
+  watch_patterns : array
+  environments : array
+  callback_url : string
+  * status : enum
+  * created_at : timestamp
+  last_notified_at : timestamp
+  notification_count : int
+  --
+  Indexes:
+  - (subscriber_id, tenant_id)
+  - (service_name, status)
+  - (tenant_id, status)
+}
+
+entity "change_approvals" {
+  * _id : ObjectId
+  --
+  * config_id : ObjectId
+  * version_id : ObjectId
+  * tenant_id : string
+  * requested_by : string
+  * status : enum
+  requested_at : timestamp
+  approved_by : string
+  approved_at : timestamp
+  rejected_by : string
+  rejected_at : timestamp
+  rejection_reason : string
+  approvers : array
+  approval_threshold : int
+  current_approvals : int
+  --
+  Indexes:
+  - (config_id, status)
+  - (tenant_id, status, requested_at)
+  - (requested_by, status)
+}
+
+' Relationships
+configs ||--o{ config_versions : "has many"
+configs ||--o{ config_audit_log : "logs"
+secrets ||--o{ secret_access_log : "tracks access"
+configs ||--o{ watch_subscriptions : "watched by"
+configs ||--o{ change_approvals : "requires"
+config_versions ||--o| change_approvals : "pending"
+
+note right of configs
+  **Environment Values**
+  - development
+  - staging
+  - production
+  - test
+  
+  **Status Values**
+  - active
+  - inactive
+  - deprecated
+  - draft
+end note
+
+note right of config_versions
+  **Status Values**
+  - draft
+  - active
+  - inactive
+  - rolled_back
+  - archived
+  
+  **Approval Status**
+  - pending
+  - approved
+  - rejected
+  - auto_approved
+end note
+
+note right of config_audit_log
+  **Action Types**
+  - create
+  - update
+  - delete
+  - activate
+  - deactivate
+  - rollback
+  - view
+  - export
+  
+  Automatic TTL cleanup
+  after 2 years
+end note
+
+note right of secrets
+  **Encryption Details**
+  - AES-256-GCM
+  - Unique IV per secret
+  - HMAC for integrity
+  - Key rotation support
+  
+  **Rotation Policy**
+  {
+    enabled: true,
+    frequency_days: 90,
+    auto_rotate: true
+  }
+end note
+
+note bottom of watch_subscriptions
+  **Watch Patterns**
+  Support glob patterns:
+  - "db.*" (all db configs)
+  - "*.timeout" (all timeout configs)
+  - "app.feature.*" (all app features)
+end note
+
+note bottom of change_approvals
+  **Approval Workflow**
+  - Single approver
+  - Multi-approver
+  - Auto-approve for certain changes
+  - Rejection with reason
+  - Time-based expiration
+end note
+
+@enduml

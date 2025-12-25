@@ -1,0 +1,230 @@
+@startuml Watch Mechanism
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title Configuration Watch & Notification Mechanism
+
+participant "Config File" as File
+participant "File Watcher\n(fsnotify)" as FileWatcher
+participant "Database\nChange Stream" as DBStream
+participant "Watch Manager" as Manager
+participant "Filter Engine" as Filter
+participant "Notification Queue" as Queue
+participant "Subscriber A" as SubA
+participant "Subscriber B" as SubB
+participant "MongoDB" as DB
+participant "Redis" as Cache
+
+== Watch Registration ==
+
+SubA -> Manager: Subscribe to pattern "db.*"
+activate Manager
+Manager -> DB: Store subscription
+activate DB
+DB --> Manager: Subscription ID
+deactivate DB
+Manager --> SubA: Subscription confirmed
+deactivate Manager
+
+SubB -> Manager: Subscribe to pattern "app.feature.*"
+activate Manager
+Manager -> DB: Store subscription
+activate DB
+DB --> Manager: Subscription ID
+deactivate DB
+Manager --> SubB: Subscription confirmed
+deactivate Manager
+
+== File-Based Configuration Watch ==
+
+File -> FileWatcher: Config file changed
+activate FileWatcher
+FileWatcher -> FileWatcher: Detect change event
+FileWatcher -> Manager: File change notification
+activate Manager
+
+Manager -> Manager: Read file content
+Manager -> Manager: Parse configuration
+Manager -> Manager: Extract changed keys
+
+Manager -> Filter: Filter subscribers\nfor changed keys
+activate Filter
+Filter -> DB: Get matching subscriptions
+activate DB
+DB --> Filter: [SubA] (matches "db.*")
+deactivate DB
+Filter --> Manager: Filtered subscribers
+deactivate Filter
+
+Manager -> Queue: Queue notification for SubA
+activate Queue
+Queue --> Manager: Queued
+deactivate Queue
+
+Manager --> FileWatcher: Processing complete
+deactivate Manager
+deactivate FileWatcher
+
+== Database Change Watch ==
+
+DB -> DBStream: Configuration updated\n(key: "db.timeout")
+activate DBStream
+DBStream -> DBStream: Detect change stream event
+DBStream -> Manager: Database change notification
+activate Manager
+
+Manager -> Manager: Extract change details
+Manager -> Manager: Identify affected keys
+
+Manager -> Filter: Filter subscribers
+activate Filter
+Filter -> DB: Get matching subscriptions
+activate DB
+DB --> Filter: [SubA] (matches "db.*")
+deactivate DB
+Filter --> Manager: Filtered subscribers
+deactivate Filter
+
+Manager -> Cache: Invalidate cache for "db.timeout"
+activate Cache
+Cache -> Cache: Delete cached value
+Cache --> Manager: Cache invalidated
+deactivate Cache
+
+Manager -> Queue: Queue notification for SubA
+activate Queue
+Queue --> Manager: Queued
+deactivate Queue
+
+Manager --> DBStream: Processing complete
+deactivate Manager
+deactivate DBStream
+
+== Notification Delivery ==
+
+Queue -> SubA: POST /webhook/config-change
+activate SubA
+SubA -> SubA: Process notification
+SubA -> SubA: Reload configuration
+SubA --> Queue: 200 OK (ACK)
+deactivate SubA
+
+alt Notification Failed
+    Queue -> SubA: POST /webhook/config-change
+    activate SubA
+    SubA --> Queue: 500 Error
+    deactivate SubA
+    Queue -> Queue: Retry with backoff\n(3 attempts)
+    Queue -> SubA: POST /webhook/config-change (Retry 1)
+    activate SubA
+    SubA --> Queue: 200 OK
+    deactivate SubA
+end
+
+== Batch Notifications ==
+
+note over Manager, Queue
+  For multiple rapid changes,
+  batch them into a single notification
+  within a 5-second window
+end note
+
+File -> FileWatcher: Multiple files changed
+activate FileWatcher
+FileWatcher -> Manager: Change event 1
+activate Manager
+Manager -> Manager: Start batch window (5s)
+FileWatcher -> Manager: Change event 2
+FileWatcher -> Manager: Change event 3
+deactivate FileWatcher
+
+Manager -> Manager: Wait for batch window
+Manager -> Manager: Merge change events
+Manager -> Filter: Filter all subscribers
+activate Filter
+Filter --> Manager: Unique subscriber list
+deactivate Filter
+
+Manager -> Queue: Single batched notification
+activate Queue
+Queue -> SubA: Batched changes notification
+activate SubA
+SubA --> Queue: ACK
+deactivate SubA
+Queue --> Manager: Delivered
+deactivate Queue
+deactivate Manager
+
+== Health Monitoring ==
+
+loop Every 30 seconds
+    Manager -> SubA: Health check ping
+    activate SubA
+    SubA --> Manager: Pong (healthy)
+    deactivate SubA
+    
+    Manager -> SubB: Health check ping
+    activate SubB
+    SubB -x Manager: Timeout
+    deactivate SubB
+    
+    Manager -> Manager: Mark SubB as unhealthy
+    Manager -> DB: Update subscription status
+    activate DB
+    DB --> Manager: Status updated
+    deactivate DB
+    
+    Manager -> Manager: Alert admin about\nunhealthy subscriber
+end
+
+note over File, FileWatcher
+  **File Watch Features**
+  - Recursive directory watching
+  - Multiple file format support
+    (YAML, JSON, TOML, ENV)
+  - Debouncing for rapid changes
+  - Symlink support
+  - Permission handling
+end note
+
+note over DBStream
+  **MongoDB Change Streams**
+  - Real-time change detection
+  - Resume token for reliability
+  - Cluster-aware
+  - Pipeline filtering
+  - Full document tracking
+end note
+
+note over Manager
+  **Watch Manager Features**
+  - Pattern-based filtering
+  - Glob pattern support
+  - Tenant isolation
+  - Environment filtering
+  - Priority-based delivery
+  - Rate limiting
+end note
+
+note over Queue
+  **Notification Queue**
+  - Guaranteed delivery
+  - Retry with exponential backoff
+  - Dead letter queue
+  - Batch notifications
+  - Priority queues
+  - Max retry: 3 times
+  - Backoff: 1s, 5s, 30s
+end note
+
+note over Filter
+  **Pattern Matching**
+  Examples:
+  - "db.*" matches "db.timeout", "db.pool"
+  - "*.timeout" matches "db.timeout", "api.timeout"
+  - "app.feature.?" matches "app.feature.a", "app.feature.b"
+  - "**" matches everything
+end note
+
+@enduml
