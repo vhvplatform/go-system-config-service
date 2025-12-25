@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/longvhv/saas-framework-go/pkg/errors"
-	"github.com/longvhv/saas-framework-go/pkg/logger"
+	"github.com/longvhv/saas-shared-go/errors"
+	"github.com/longvhv/saas-shared-go/logger"
 	"github.com/longvhv/saas-framework-go/services/system-config-service/internal/domain"
 	"github.com/longvhv/saas-framework-go/services/system-config-service/internal/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
