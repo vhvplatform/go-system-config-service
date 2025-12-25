@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/longvhv/saas-framework-go/services/system-config-service/internal/domain"
+	"github.com/vhvcorp/go-system-config-service/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

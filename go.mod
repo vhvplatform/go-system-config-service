@@ -1,24 +1,4 @@
-
-// ============================================================================
-// MIGRATION NOTE: Multi-Repo Extraction
-// ============================================================================
-// When extracting this service to a separate repository:
-// 1. Update module path to: github.com/longvhv/saas-system-config-service
-// 2. Replace local pkg dependency with: github.com/longvhv/saas-shared-go v0.1.0
-// 3. Remove all replace directives pointing to ../pkg
-// 4. Run: go mod tidy
-// 
-// Example transformation:
-//   Before: module github.com/longvhv/saas-system-config-service
-//   After:  module github.com/longvhv/saas-system-config-service
-//
-//   Before: replace github.com/longvhv/saas-framework-go/pkg => ../../pkg
-//   After:  (remove replace directive)
-//           require github.com/longvhv/saas-shared-go v0.1.0
-//
-// See: docs/migration/services/system-config-service/EXTRACTION_GUIDE.md
-// ============================================================================
-module github.com/longvhv/saas-system-config-service
+module github.com/vhvcorp/go-system-config-service
 
 go 1.24.0
 
@@ -26,7 +6,7 @@ toolchain go1.24.11
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/longvhv/saas-framework-go/pkg v0.0.0
+	github.com/vhvcorp/go-shared v0.0.0-20251225110422-f2db33b81bec
 	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.69.2
@@ -87,6 +67,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
 
 exclude github.com/pelletier/go-toml/v3 v3.0.0
