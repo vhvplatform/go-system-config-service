@@ -1,11 +1,11 @@
-module github.com/vhvcorp/go-system-config-service
+module github.com/vhvplatform/go-system-config-service
 
 go 1.25.5
 
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/stretchr/testify v1.11.1
-	github.com/vhvcorp/go-shared v0.0.0-20251225123226-c6e63922fc55
+	github.com/vhvplatform/go-shared v0.0.0-20251225123226-c6e63922fc55
 	go.mongodb.org/mongo-driver v1.17.6
 	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.78.0

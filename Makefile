@@ -2,7 +2,7 @@
 
 # Variables
 system-config-service := system-config-service
-DOCKER_REGISTRY ?= ghcr.io/vhvcorp
+DOCKER_REGISTRY ?= ghcr.io/vhvplatform
 VERSION ?= $(shell git describe --tags --always --dirty)
 GO_VERSION := 1.25.5
 

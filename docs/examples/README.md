@@ -317,5 +317,5 @@ curl -X GET http://localhost:8085/api/v1/watch/status \
 ## Support
 
 For questions or issues:
-- GitHub Issues: https://github.com/vhvcorp/go-system-config-service/issues
-- Email: support@vhvcorp.com
+- GitHub Issues: https://github.com/vhvplatform/go-system-config-service/issues
+- Email: support@vhvplatform.com

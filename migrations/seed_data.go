@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/vhvcorp/go-system-config-service/internal/domain"
+	"github.com/vhvplatform/go-system-config-service/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )

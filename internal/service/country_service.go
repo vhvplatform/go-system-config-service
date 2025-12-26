@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vhvcorp/go-shared/errors"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-shared/redis"
-	"github.com/vhvcorp/go-system-config-service/internal/domain"
-	"github.com/vhvcorp/go-system-config-service/internal/repository"
+	"github.com/vhvplatform/go-shared/errors"
+	"github.com/vhvplatform/go-shared/logger"
+	"github.com/vhvplatform/go-shared/redis"
+	"github.com/vhvplatform/go-system-config-service/internal/domain"
+	"github.com/vhvplatform/go-system-config-service/internal/repository"
 	"go.uber.org/zap"
 )
 

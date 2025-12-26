@@ -1030,9 +1030,9 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/vhvcorp/go-system-config-service/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/vhvcorp/go-system-config-service/discussions)
-- **Email**: support@vhvcorp.com
+- **Issues**: [GitHub Issues](https://github.com/vhvplatform/go-system-config-service/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/vhvplatform/go-system-config-service/discussions)
+- **Email**: support@vhvplatform.com
 
 ## License
 

@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-system-config-service/internal/handler"
+	"github.com/vhvplatform/go-shared/logger"
+	"github.com/vhvplatform/go-system-config-service/internal/handler"
 )
 
 // SetupRouter sets up the Gin router with all routes
