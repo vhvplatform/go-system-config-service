@@ -2,6 +2,8 @@
 
 The System Config Service is an enterprise-grade microservice responsible for managing all common system configurations, master data, and secrets for the entire SaaS platform with advanced features like hot reload, version control, and multi-environment support.
 
+> **Architecture Alignment**: This service conforms to the architectural standards defined in [go-infrastructure](https://github.com/vhvplatform/go-infrastructure). See [ARCHITECTURE_ALIGNMENT.md](ARCHITECTURE_ALIGNMENT.md) for details.
+
 ## Overview
 
 This service provides centralized, secure, and dynamic management of:
@@ -1022,6 +1024,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Documentation
 
+- [Architecture Alignment](ARCHITECTURE_ALIGNMENT.md) - Conformance with go-infrastructure standards
 - [Architecture Diagrams](docs/diagrams/) - PlantUML diagrams
 - [API Reference](docs/API.md) - Detailed API documentation
 - [Dependencies](docs/DEPENDENCIES.md) - Dependency information
