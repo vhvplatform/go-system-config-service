@@ -9,26 +9,26 @@ import (
 
 // Secret represents a sensitive configuration with encryption
 type Secret struct {
-	ID               primitive.ObjectID     `json:"id" bson:"_id,omitempty"`
-	TenantID         string                 `json:"tenant_id" bson:"tenant_id"`             // Optional: for tenant-specific secrets
-	SecretKey        string                 `json:"secret_key" bson:"secret_key"`           // Unique secret key
-	EncryptedValue   string                 `json:"-" bson:"encrypted_value"`               // Encrypted value (not exposed in JSON)
-	Environment      string                 `json:"environment" bson:"environment"`         // dev, staging, production
-	Description      string                 `json:"description" bson:"description"`         // Description of the secret
-	RotationPolicy   string                 `json:"rotation_policy" bson:"rotation_policy"` // manual, auto
-	RotationDays     int                    `json:"rotation_days" bson:"rotation_days"`     // Days until rotation required
-	LastRotatedAt    *time.Time             `json:"last_rotated_at" bson:"last_rotated_at"` // Last rotation timestamp
-	ExpiresAt        *time.Time             `json:"expires_at" bson:"expires_at"`           // Optional expiration
-	Status           string                 `json:"status" bson:"status"`                   // active, expired, rotated
-	Version          int                    `json:"version" bson:"version"`                 // Secret version
-	EncryptionKeyID  string                 `json:"encryption_key_id" bson:"encryption_key_id"` // ID of encryption key used
-	Metadata         map[string]interface{} `json:"metadata" bson:"metadata"`               // Additional metadata
-	AccessCount      int64                  `json:"access_count" bson:"access_count"`       // Number of times accessed
-	LastAccessedAt   *time.Time             `json:"last_accessed_at" bson:"last_accessed_at"` // Last access timestamp
-	CreatedAt        time.Time              `json:"created_at" bson:"created_at"`
-	UpdatedAt        time.Time              `json:"updated_at" bson:"updated_at"`
-	CreatedBy        string                 `json:"created_by" bson:"created_by"`
-	UpdatedBy        string                 `json:"updated_by" bson:"updated_by"`
+	ID              primitive.ObjectID     `json:"id" bson:"_id,omitempty"`
+	TenantID        string                 `json:"tenant_id" bson:"tenant_id"`                 // Optional: for tenant-specific secrets
+	SecretKey       string                 `json:"secret_key" bson:"secret_key"`               // Unique secret key
+	EncryptedValue  string                 `json:"-" bson:"encrypted_value"`                   // Encrypted value (not exposed in JSON)
+	Environment     string                 `json:"environment" bson:"environment"`             // dev, staging, production
+	Description     string                 `json:"description" bson:"description"`             // Description of the secret
+	RotationPolicy  string                 `json:"rotation_policy" bson:"rotation_policy"`     // manual, auto
+	RotationDays    int                    `json:"rotation_days" bson:"rotation_days"`         // Days until rotation required
+	LastRotatedAt   *time.Time             `json:"last_rotated_at" bson:"last_rotated_at"`     // Last rotation timestamp
+	ExpiresAt       *time.Time             `json:"expires_at" bson:"expires_at"`               // Optional expiration
+	Status          string                 `json:"status" bson:"status"`                       // active, expired, rotated
+	Version         int                    `json:"version" bson:"version"`                     // Secret version
+	EncryptionKeyID string                 `json:"encryption_key_id" bson:"encryption_key_id"` // ID of encryption key used
+	Metadata        map[string]interface{} `json:"metadata" bson:"metadata"`                   // Additional metadata
+	AccessCount     int64                  `json:"access_count" bson:"access_count"`           // Number of times accessed
+	LastAccessedAt  *time.Time             `json:"last_accessed_at" bson:"last_accessed_at"`   // Last access timestamp
+	CreatedAt       time.Time              `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time              `json:"updated_at" bson:"updated_at"`
+	CreatedBy       string                 `json:"created_by" bson:"created_by"`
+	UpdatedBy       string                 `json:"updated_by" bson:"updated_by"`
 }
 
 // SecretAccessLog represents an access log for secrets
@@ -52,31 +52,31 @@ type SecretAccessLog struct {
 // WatchSubscription represents a subscription to configuration changes
 type WatchSubscription struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	SubscriberID string             `json:"subscriber_id" bson:"subscriber_id"`     // Unique ID for subscriber
-	TenantID     string             `json:"tenant_id" bson:"tenant_id"`             // Optional: tenant filter
-	ServiceName  string             `json:"service_name" bson:"service_name"`       // Name of subscribing service
-	CallbackURL  string             `json:"callback_url" bson:"callback_url"`       // Webhook URL for notifications
-	Patterns     []string           `json:"patterns" bson:"patterns"`               // Config key patterns to watch (e.g., "db.*", "api.*.timeout")
-	Environments []string           `json:"environments" bson:"environments"`       // Environments to watch
-	Status       string             `json:"status" bson:"status"`                   // active, paused, inactive
-	LastNotified *time.Time         `json:"last_notified" bson:"last_notified"`     // Last notification time
-	FailureCount int                `json:"failure_count" bson:"failure_count"`     // Number of consecutive failures
+	SubscriberID string             `json:"subscriber_id" bson:"subscriber_id"` // Unique ID for subscriber
+	TenantID     string             `json:"tenant_id" bson:"tenant_id"`         // Optional: tenant filter
+	ServiceName  string             `json:"service_name" bson:"service_name"`   // Name of subscribing service
+	CallbackURL  string             `json:"callback_url" bson:"callback_url"`   // Webhook URL for notifications
+	Patterns     []string           `json:"patterns" bson:"patterns"`           // Config key patterns to watch (e.g., "db.*", "api.*.timeout")
+	Environments []string           `json:"environments" bson:"environments"`   // Environments to watch
+	Status       string             `json:"status" bson:"status"`               // active, paused, inactive
+	LastNotified *time.Time         `json:"last_notified" bson:"last_notified"` // Last notification time
+	FailureCount int                `json:"failure_count" bson:"failure_count"` // Number of consecutive failures
 	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
 // ConfigChangeNotification represents a notification for configuration changes
 type ConfigChangeNotification struct {
-	ConfigKey    string                 `json:"config_key"`
-	TenantID     string                 `json:"tenant_id"`
-	Environment  string                 `json:"environment"`
-	OldValue     interface{}            `json:"old_value"`
-	NewValue     interface{}            `json:"new_value"`
-	Version      int                    `json:"version"`
-	ChangeType   string                 `json:"change_type"` // create, update, delete, activate, rollback
-	ChangedBy    string                 `json:"changed_by"`
-	Timestamp    time.Time              `json:"timestamp"`
-	Metadata     map[string]interface{} `json:"metadata"`
+	ConfigKey   string                 `json:"config_key"`
+	TenantID    string                 `json:"tenant_id"`
+	Environment string                 `json:"environment"`
+	OldValue    interface{}            `json:"old_value"`
+	NewValue    interface{}            `json:"new_value"`
+	Version     int                    `json:"version"`
+	ChangeType  string                 `json:"change_type"` // create, update, delete, activate, rollback
+	ChangedBy   string                 `json:"changed_by"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Metadata    map[string]interface{} `json:"metadata"`
 }
 
 // Validate validates the secret data

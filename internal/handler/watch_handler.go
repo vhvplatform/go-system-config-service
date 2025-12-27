@@ -39,13 +39,13 @@ func (h *WatchHandler) Subscribe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := h.service.Subscribe(c.Request.Context(), &subscription); err != nil {
 		h.logger.Error("Failed to create subscription", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create subscription"})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, subscription)
 }
 
@@ -57,13 +57,13 @@ func (h *WatchHandler) Subscribe(c *gin.Context) {
 // @Router /api/v1/watch/unsubscribe/{id} [delete]
 func (h *WatchHandler) Unsubscribe(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	if err := h.service.Unsubscribe(c.Request.Context(), id); err != nil {
 		h.logger.Error("Failed to unsubscribe", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unsubscribe"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Unsubscribed successfully"})
 }
 
@@ -78,14 +78,14 @@ func (h *WatchHandler) Unsubscribe(c *gin.Context) {
 func (h *WatchHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "30"))
-	
+
 	subscriptions, total, err := h.service.List(c.Request.Context(), page, perPage)
 	if err != nil {
 		h.logger.Error("Failed to list subscriptions", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list subscriptions"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":     subscriptions,
 		"total":    total,
@@ -103,14 +103,14 @@ func (h *WatchHandler) List(c *gin.Context) {
 // @Router /api/v1/watch/subscriptions/{id} [get]
 func (h *WatchHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	subscription, err := h.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		h.logger.Error("Failed to get subscription", zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, subscription)
 }
 
@@ -125,19 +125,19 @@ func (h *WatchHandler) GetByID(c *gin.Context) {
 // @Router /api/v1/watch/subscriptions/{id} [put]
 func (h *WatchHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := h.service.UpdateSubscription(c.Request.Context(), id, updates); err != nil {
 		h.logger.Error("Failed to update subscription", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subscription"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription updated successfully"})
 }
 
@@ -155,18 +155,18 @@ func (h *WatchHandler) TriggerNotification(c *gin.Context) {
 		TenantID    string `json:"tenant_id"`
 		Environment string `json:"environment"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := h.service.TriggerNotification(c.Request.Context(), body.ConfigKey, body.TenantID, body.Environment); err != nil {
 		h.logger.Error("Failed to trigger notification", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to trigger notification"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Notification triggered successfully"})
 }
 
@@ -183,18 +183,18 @@ func (h *WatchHandler) GetMatchingSubscriptions(c *gin.Context) {
 	configKey := c.Query("config_key")
 	tenantID := c.Query("tenant_id")
 	environment := c.Query("environment")
-	
+
 	if configKey == "" || environment == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "config_key and environment are required"})
 		return
 	}
-	
+
 	subscriptions, err := h.service.GetMatchingSubscriptions(c.Request.Context(), configKey, tenantID, environment)
 	if err != nil {
 		h.logger.Error("Failed to get matching subscriptions", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get matching subscriptions"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, subscriptions)
 }

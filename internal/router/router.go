@@ -36,7 +36,7 @@ func SetupRouter(
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
-	
+
 	// Configuration Management endpoints
 	{
 		configs := v1.Group("/configs")
@@ -78,7 +78,7 @@ func SetupRouter(
 			watch.GET("/matching", watchHandler.GetMatchingSubscriptions)
 		}
 	}
-	
+
 	// System Config routes (existing entities)
 	systemConfig := v1.Group("/system-config")
 	{

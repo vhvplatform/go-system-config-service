@@ -39,20 +39,20 @@ func (h *ConfigHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get user ID from context (would come from auth middleware)
 	userID := c.GetString("user_id")
 	if userID == "" {
 		userID = "system" // Default for testing
 	}
 	config.CreatedBy = userID
-	
+
 	if err := h.service.Create(c.Request.Context(), &config); err != nil {
 		h.logger.Error("Failed to create config", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create configuration"})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, config)
 }
 
@@ -65,14 +65,14 @@ func (h *ConfigHandler) Create(c *gin.Context) {
 // @Router /api/v1/configs/{id} [get]
 func (h *ConfigHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	config, err := h.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		h.logger.Error("Failed to get config", zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, config)
 }
 
@@ -89,19 +89,19 @@ func (h *ConfigHandler) GetByKey(c *gin.Context) {
 	key := c.Param("key")
 	tenantID := c.Query("tenant_id")
 	environment := c.Query("environment")
-	
+
 	if environment == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "environment is required"})
 		return
 	}
-	
+
 	config, err := h.service.GetByKey(c.Request.Context(), tenantID, environment, key)
 	if err != nil {
 		h.logger.Error("Failed to get config", zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Configuration not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, config)
 }
 
@@ -116,25 +116,25 @@ func (h *ConfigHandler) GetByKey(c *gin.Context) {
 // @Router /api/v1/configs/{id} [put]
 func (h *ConfigHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get user ID from context
 	userID := c.GetString("user_id")
 	if userID == "" {
 		userID = "system"
 	}
-	
+
 	if err := h.service.Update(c.Request.Context(), id, updates, userID); err != nil {
 		h.logger.Error("Failed to update config", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update configuration"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Configuration updated successfully"})
 }
 
@@ -146,19 +146,19 @@ func (h *ConfigHandler) Update(c *gin.Context) {
 // @Router /api/v1/configs/{id} [delete]
 func (h *ConfigHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	// Get user ID from context
 	userID := c.GetString("user_id")
 	if userID == "" {
 		userID = "system"
 	}
-	
+
 	if err := h.service.Delete(c.Request.Context(), id, userID); err != nil {
 		h.logger.Error("Failed to delete config", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete configuration"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Configuration deleted successfully"})
 }
 
@@ -177,14 +177,14 @@ func (h *ConfigHandler) List(c *gin.Context) {
 	environment := c.Query("environment")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "30"))
-	
+
 	configs, total, err := h.service.List(c.Request.Context(), tenantID, environment, page, perPage)
 	if err != nil {
 		h.logger.Error("Failed to list configs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list configurations"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":     configs,
 		"total":    total,
@@ -202,14 +202,14 @@ func (h *ConfigHandler) List(c *gin.Context) {
 // @Router /api/v1/configs/{id}/history [get]
 func (h *ConfigHandler) GetHistory(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	versions, err := h.service.GetHistory(c.Request.Context(), id)
 	if err != nil {
 		h.logger.Error("Failed to get history", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get version history"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, versions)
 }
 
@@ -224,7 +224,7 @@ func (h *ConfigHandler) GetHistory(c *gin.Context) {
 // @Router /api/v1/configs/{id}/activate [post]
 func (h *ConfigHandler) ActivateVersion(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var body struct {
 		VersionNumber int `json:"version_number"`
 	}
@@ -232,19 +232,19 @@ func (h *ConfigHandler) ActivateVersion(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get user ID from context
 	userID := c.GetString("user_id")
 	if userID == "" {
 		userID = "system"
 	}
-	
+
 	if err := h.service.ActivateVersion(c.Request.Context(), id, body.VersionNumber, userID); err != nil {
 		h.logger.Error("Failed to activate version", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to activate version"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Version activated successfully"})
 }
 
@@ -259,7 +259,7 @@ func (h *ConfigHandler) ActivateVersion(c *gin.Context) {
 // @Router /api/v1/configs/{id}/rollback [post]
 func (h *ConfigHandler) Rollback(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var body struct {
 		TargetVersion int `json:"target_version"`
 	}
@@ -267,19 +267,19 @@ func (h *ConfigHandler) Rollback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get user ID from context
 	userID := c.GetString("user_id")
 	if userID == "" {
 		userID = "system"
 	}
-	
+
 	if err := h.service.Rollback(c.Request.Context(), id, body.TargetVersion, userID); err != nil {
 		h.logger.Error("Failed to rollback", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to rollback configuration"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Configuration rolled back successfully"})
 }
 
@@ -296,19 +296,19 @@ func (h *ConfigHandler) CompareVersions(c *gin.Context) {
 	id := c.Param("id")
 	v1, _ := strconv.Atoi(c.Query("v1"))
 	v2, _ := strconv.Atoi(c.Query("v2"))
-	
+
 	if v1 == 0 || v2 == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "v1 and v2 parameters are required"})
 		return
 	}
-	
+
 	comparison, err := h.service.CompareVersions(c.Request.Context(), id, v1, v2)
 	if err != nil {
 		h.logger.Error("Failed to compare versions", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to compare versions"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, comparison)
 }
 
@@ -325,14 +325,14 @@ func (h *ConfigHandler) GetAuditLogs(c *gin.Context) {
 	id := c.Param("id")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "30"))
-	
+
 	logs, total, err := h.service.GetAuditLogs(c.Request.Context(), id, page, perPage)
 	if err != nil {
 		h.logger.Error("Failed to get audit logs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get audit logs"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":     logs,
 		"total":    total,
