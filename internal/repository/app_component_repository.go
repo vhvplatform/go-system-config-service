@@ -65,7 +65,8 @@ func (r *AppComponentRepository) FindByID(ctx context.Context, id string) (*doma
 	}
 
 	var component domain.AppComponent
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&component)
+	opts := options.FindOne() // _id is already the primary key and indexed by default
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}, opts).Decode(&component)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -78,10 +79,12 @@ func (r *AppComponentRepository) FindByID(ctx context.Context, id string) (*doma
 // FindByCode finds an app component by code and tenant
 func (r *AppComponentRepository) FindByCode(ctx context.Context, tenantID, code string) (*domain.AppComponent, error) {
 	var component domain.AppComponent
+	// Use compound index hint for optimal performance
+	opts := options.FindOne().SetHint(bson.D{{Key: "tenant_id", Value: 1}, {Key: "code", Value: 1}})
 	err := r.collection.FindOne(ctx, bson.M{
 		"tenant_id": tenantID,
 		"code":      code,
-	}).Decode(&component)
+	}, opts).Decode(&component)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -95,17 +98,19 @@ func (r *AppComponentRepository) FindByCode(ctx context.Context, tenantID, code 
 func (r *AppComponentRepository) List(ctx context.Context, tenantID string, page, perPage int) ([]*domain.AppComponent, int64, error) {
 	filter := bson.M{"tenant_id": tenantID}
 
-	// Count total
-	total, err := r.collection.CountDocuments(ctx, filter)
+	// Count total with index hint
+	countOpts := options.Count().SetHint(bson.D{{Key: "tenant_id", Value: 1}})
+	total, err := r.collection.CountDocuments(ctx, filter, countOpts)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count app components: %w", err)
 	}
 
-	// Find with pagination
+	// Find with pagination and index hint
 	opts := options.Find().
 		SetSkip(int64((page - 1) * perPage)).
 		SetLimit(int64(perPage)).
-		SetSort(bson.D{{Key: "created_at", Value: -1}})
+		SetSort(bson.D{{Key: "created_at", Value: -1}}).
+		SetHint(bson.D{{Key: "tenant_id", Value: 1}}) // Use tenant_id index
 
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
@@ -125,14 +130,33 @@ func (r *AppComponentRepository) List(ctx context.Context, tenantID string, page
 func (r *AppComponentRepository) Update(ctx context.Context, component *domain.AppComponent) error {
 	component.UpdatedAt = time.Now()
 
-	_, err := r.collection.UpdateOne(
+	// Use $set to update only provided fields for better performance
+	update := bson.M{
+		"$set": bson.M{
+			"name":        component.Name,
+			"description": component.Description,
+			"icon":        component.Icon,
+			"version":     component.Version,
+			"status":      component.Status,
+			"config":      component.Config,
+			"updated_at":  component.UpdatedAt,
+			"updated_by":  component.UpdatedBy,
+		},
+	}
+
+	result, err := r.collection.UpdateOne(
 		ctx,
 		bson.M{"_id": component.ID},
-		bson.M{"$set": component},
+		update,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update app component: %w", err)
 	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("app component not found")
+	}
+
 	return nil
 }
 
@@ -148,4 +172,38 @@ func (r *AppComponentRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete app component: %w", err)
 	}
 	return nil
+}
+
+// FindByIDs finds multiple app components by IDs in a single query (batch operation)
+func (r *AppComponentRepository) FindByIDs(ctx context.Context, ids []string) ([]*domain.AppComponent, error) {
+	if len(ids) == 0 {
+		return []*domain.AppComponent{}, nil
+	}
+
+	objectIDs := make([]primitive.ObjectID, 0, len(ids))
+	for _, id := range ids {
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			continue // Skip invalid IDs
+		}
+		objectIDs = append(objectIDs, objectID)
+	}
+
+	if len(objectIDs) == 0 {
+		return []*domain.AppComponent{}, nil
+	}
+
+	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find app components: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var components []*domain.AppComponent
+	if err = cursor.All(ctx, &components); err != nil {
+		return nil, fmt.Errorf("failed to decode app components: %w", err)
+	}
+
+	return components, nil
 }

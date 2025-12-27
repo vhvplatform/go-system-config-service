@@ -56,7 +56,8 @@ func (r *CountryRepository) Create(ctx context.Context, country *domain.Country)
 // FindByCode finds a country by code
 func (r *CountryRepository) FindByCode(ctx context.Context, code string) (*domain.Country, error) {
 	var country domain.Country
-	err := r.collection.FindOne(ctx, bson.M{"code": code}).Decode(&country)
+	opts := options.FindOne().SetHint(bson.D{{Key: "code", Value: 1}}) // Use code index for optimal performance
+	err := r.collection.FindOne(ctx, bson.M{"code": code}, opts).Decode(&country)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -70,15 +71,19 @@ func (r *CountryRepository) FindByCode(ctx context.Context, code string) (*domai
 func (r *CountryRepository) List(ctx context.Context, page, perPage int) ([]*domain.Country, int64, error) {
 	filter := bson.M{"status": "active"}
 
-	total, err := r.collection.CountDocuments(ctx, filter)
+	// Use CountDocuments with a hint to use the status index for better performance
+	countOpts := options.Count().SetHint(bson.D{{Key: "status", Value: 1}})
+	total, err := r.collection.CountDocuments(ctx, filter, countOpts)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count countries: %w", err)
 	}
 
+	// Optimize find query with projection (if needed) and proper options
 	opts := options.Find().
 		SetSkip(int64((page - 1) * perPage)).
 		SetLimit(int64(perPage)).
-		SetSort(bson.D{{Key: "code", Value: 1}})
+		SetSort(bson.D{{Key: "code", Value: 1}}).
+		SetHint(bson.D{{Key: "status", Value: 1}}) // Use index hint for better performance
 
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
@@ -98,14 +103,34 @@ func (r *CountryRepository) List(ctx context.Context, page, perPage int) ([]*dom
 func (r *CountryRepository) Update(ctx context.Context, country *domain.Country) error {
 	country.UpdatedAt = time.Now()
 
-	_, err := r.collection.UpdateOne(
+	// Use $set to update only provided fields for better performance
+	update := bson.M{
+		"$set": bson.M{
+			"code3":       country.Code3,
+			"name":        country.Name,
+			"native_name": country.NativeName,
+			"phone_code":  country.PhoneCode,
+			"currency":    country.Currency,
+			"flag":        country.Flag,
+			"region":      country.Region,
+			"status":      country.Status,
+			"updated_at":  country.UpdatedAt,
+		},
+	}
+
+	result, err := r.collection.UpdateOne(
 		ctx,
 		bson.M{"_id": country.ID},
-		bson.M{"$set": country},
+		update,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update country: %w", err)
 	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("country not found")
+	}
+
 	return nil
 }
 
@@ -116,4 +141,27 @@ func (r *CountryRepository) Delete(ctx context.Context, code string) error {
 		return fmt.Errorf("failed to delete country: %w", err)
 	}
 	return nil
+}
+
+// FindByCodes finds multiple countries by codes in a single query (batch operation)
+func (r *CountryRepository) FindByCodes(ctx context.Context, codes []string) ([]*domain.Country, error) {
+	if len(codes) == 0 {
+		return []*domain.Country{}, nil
+	}
+
+	filter := bson.M{"code": bson.M{"$in": codes}}
+	opts := options.Find().SetHint(bson.D{{Key: "code", Value: 1}})
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find countries: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var countries []*domain.Country
+	if err = cursor.All(ctx, &countries); err != nil {
+		return nil, fmt.Errorf("failed to decode countries: %w", err)
+	}
+
+	return countries, nil
 }

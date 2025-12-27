@@ -51,10 +51,11 @@ func (s *CountryService) Create(ctx context.Context, country *domain.Country) er
 		return errors.Internal("Failed to create country")
 	}
 
-	// Invalidate cache
+	// Invalidate cache - use a pattern-based approach for better cache management
 	cacheKey := fmt.Sprintf("system-config:country:%s", country.Code)
+	// Invalidate list cache as well
 	s.redisClient.Delete(ctx, cacheKey)
-	s.redisClient.Delete(ctx, "system-config:countries:all")
+	s.redisClient.Delete(ctx, "system-config:countries:list:p1:30")
 
 	s.logger.Info("Country created", zap.String("code", country.Code))
 	return nil
@@ -99,6 +100,43 @@ func (s *CountryService) List(ctx context.Context, page, perPage int) ([]*domain
 		perPage = 30
 	}
 
+	// Try cache first for the first page with default page size (most common query)
+	if page == 1 && perPage == 30 {
+		cacheKey := "system-config:countries:list:p1:30"
+		cached, err := s.redisClient.Get(ctx, cacheKey)
+		if err == nil && cached != "" {
+			var cachedData struct {
+				Countries []*domain.Country `json:"countries"`
+				Total     int64             `json:"total"`
+			}
+			if err := json.Unmarshal([]byte(cached), &cachedData); err == nil {
+				return cachedData.Countries, cachedData.Total, nil
+			}
+		}
+
+		// Get from database
+		countries, total, err := s.repo.List(ctx, page, perPage)
+		if err != nil {
+			s.logger.Error("Failed to list countries", zap.Error(err))
+			return nil, 0, errors.Internal("Failed to list countries")
+		}
+
+		// Cache the first page for 1 hour (frequently accessed)
+		cachedData := struct {
+			Countries []*domain.Country `json:"countries"`
+			Total     int64             `json:"total"`
+		}{
+			Countries: countries,
+			Total:     total,
+		}
+		if data, err := json.Marshal(cachedData); err == nil {
+			s.redisClient.Set(ctx, cacheKey, data, 1*time.Hour)
+		}
+
+		return countries, total, nil
+	}
+
+	// For other pages, get directly from database (less frequently accessed)
 	countries, total, err := s.repo.List(ctx, page, perPage)
 	if err != nil {
 		s.logger.Error("Failed to list countries", zap.Error(err))
@@ -128,7 +166,7 @@ func (s *CountryService) Update(ctx context.Context, country *domain.Country) er
 	// Invalidate cache
 	cacheKey := fmt.Sprintf("system-config:country:%s", country.Code)
 	s.redisClient.Delete(ctx, cacheKey)
-	s.redisClient.Delete(ctx, "system-config:countries:all")
+	s.redisClient.Delete(ctx, "system-config:countries:list:p1:30")
 
 	s.logger.Info("Country updated", zap.String("code", country.Code))
 	return nil
@@ -154,7 +192,7 @@ func (s *CountryService) Delete(ctx context.Context, code string) error {
 	// Invalidate cache
 	cacheKey := fmt.Sprintf("system-config:country:%s", code)
 	s.redisClient.Delete(ctx, cacheKey)
-	s.redisClient.Delete(ctx, "system-config:countries:all")
+	s.redisClient.Delete(ctx, "system-config:countries:list:p1:30")
 
 	s.logger.Info("Country deleted", zap.String("code", code))
 	return nil
