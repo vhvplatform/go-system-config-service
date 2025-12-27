@@ -95,7 +95,7 @@ func (s *AppComponentService) GetByCode(ctx context.Context, tenantID, code stri
 		s.logger.Error("Failed to get app component", zap.Error(err))
 		return nil, errors.Internal("Failed to get app component")
 	}
-	
+
 	if component == nil {
 		// Implement negative caching
 		s.redisClient.Set(ctx, cacheKey, []byte("NOT_FOUND"), 5*time.Minute)

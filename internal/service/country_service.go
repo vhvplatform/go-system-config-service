@@ -71,7 +71,7 @@ func (s *CountryService) GetByCode(ctx context.Context, code string) (*domain.Co
 		if cached == "NOT_FOUND" {
 			return nil, errors.NotFound("Country not found")
 		}
-		
+
 		var country domain.Country
 		if err := json.Unmarshal([]byte(cached), &country); err == nil {
 			return &country, nil
@@ -84,7 +84,7 @@ func (s *CountryService) GetByCode(ctx context.Context, code string) (*domain.Co
 		s.logger.Error("Failed to get country", zap.Error(err))
 		return nil, errors.Internal("Failed to get country")
 	}
-	
+
 	if country == nil {
 		// Implement negative caching: cache the fact that this country doesn't exist
 		// This prevents repeated database hits for non-existent countries
