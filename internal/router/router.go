@@ -12,6 +12,9 @@ import (
 func SetupRouter(
 	appComponentHandler *handler.AppComponentHandler,
 	countryHandler *handler.CountryHandler,
+	configHandler *handler.ConfigHandler,
+	secretHandler *handler.SecretHandler,
+	watchHandler *handler.WatchHandler,
 	log *logger.Logger,
 ) *gin.Engine {
 	router := gin.New()
@@ -32,10 +35,55 @@ func SetupRouter(
 	})
 
 	// API v1 routes
-	v1 := router.Group("/api/v1/system-config")
+	v1 := router.Group("/api/v1")
+
+	// Configuration Management endpoints
+	{
+		configs := v1.Group("/configs")
+		{
+			configs.GET("", configHandler.List)
+			configs.POST("", configHandler.Create)
+			configs.GET("/:id", configHandler.GetByID)
+			configs.PUT("/:id", configHandler.Update)
+			configs.DELETE("/:id", configHandler.Delete)
+			configs.GET("/key/:key", configHandler.GetByKey)
+			configs.GET("/:id/history", configHandler.GetHistory)
+			configs.POST("/:id/activate", configHandler.ActivateVersion)
+			configs.POST("/:id/rollback", configHandler.Rollback)
+			configs.GET("/:id/compare", configHandler.CompareVersions)
+			configs.GET("/:id/audit", configHandler.GetAuditLogs)
+		}
+
+		// Secret Management endpoints
+		secrets := v1.Group("/secrets")
+		{
+			secrets.GET("", secretHandler.List)
+			secrets.POST("", secretHandler.Create)
+			secrets.GET("/key/:key", secretHandler.GetByKey)
+			secrets.PUT("/:id", secretHandler.Update)
+			secrets.DELETE("/:id", secretHandler.Delete)
+			secrets.POST("/:id/rotate", secretHandler.Rotate)
+			secrets.GET("/:id/audit", secretHandler.GetAuditLogs)
+		}
+
+		// Watch Subscription endpoints
+		watch := v1.Group("/watch")
+		{
+			watch.POST("/subscribe", watchHandler.Subscribe)
+			watch.DELETE("/unsubscribe/:id", watchHandler.Unsubscribe)
+			watch.GET("/subscriptions", watchHandler.List)
+			watch.GET("/subscriptions/:id", watchHandler.GetByID)
+			watch.PUT("/subscriptions/:id", watchHandler.Update)
+			watch.POST("/trigger", watchHandler.TriggerNotification)
+			watch.GET("/matching", watchHandler.GetMatchingSubscriptions)
+		}
+	}
+
+	// System Config routes (existing entities)
+	systemConfig := v1.Group("/system-config")
 	{
 		// App Components
-		appComponents := v1.Group("/app-components")
+		appComponents := systemConfig.Group("/app-components")
 		{
 			appComponents.GET("", appComponentHandler.List)
 			appComponents.GET("/:id", appComponentHandler.GetByID)
@@ -45,7 +93,7 @@ func SetupRouter(
 		}
 
 		// Countries
-		countries := v1.Group("/countries")
+		countries := systemConfig.Group("/countries")
 		{
 			countries.GET("", countryHandler.List)
 			countries.GET("/:code", countryHandler.GetByCode)
@@ -58,7 +106,7 @@ func SetupRouter(
 		// These would be implemented similarly to the above
 
 		// SaaS Modules
-		modules := v1.Group("/modules")
+		modules := systemConfig.Group("/modules")
 		{
 			modules.GET("", placeholderHandler)
 			modules.GET("/:id", placeholderHandler)
@@ -68,7 +116,7 @@ func SetupRouter(
 		}
 
 		// Service Packages
-		packages := v1.Group("/packages")
+		packages := systemConfig.Group("/packages")
 		{
 			packages.GET("", placeholderHandler)
 			packages.GET("/:id", placeholderHandler)
@@ -78,7 +126,7 @@ func SetupRouter(
 		}
 
 		// Admin Menus
-		menus := v1.Group("/menus")
+		menus := systemConfig.Group("/menus")
 		{
 			menus.GET("", placeholderHandler)
 			menus.GET("/tree", placeholderHandler)
@@ -90,7 +138,7 @@ func SetupRouter(
 		}
 
 		// Permissions
-		permissions := v1.Group("/permissions")
+		permissions := systemConfig.Group("/permissions")
 		{
 			permissions.GET("", placeholderHandler)
 			permissions.GET("/:id", placeholderHandler)
@@ -103,7 +151,7 @@ func SetupRouter(
 		}
 
 		// Roles
-		roles := v1.Group("/roles")
+		roles := systemConfig.Group("/roles")
 		{
 			roles.GET("", placeholderHandler)
 			roles.GET("/:id", placeholderHandler)
@@ -116,7 +164,7 @@ func SetupRouter(
 		}
 
 		// Ethnicities
-		ethnicities := v1.Group("/ethnicities")
+		ethnicities := systemConfig.Group("/ethnicities")
 		{
 			ethnicities.GET("", placeholderHandler)
 			ethnicities.GET("/:id", placeholderHandler)
@@ -127,7 +175,7 @@ func SetupRouter(
 		}
 
 		// Locations (Hierarchical)
-		locations := v1.Group("/locations")
+		locations := systemConfig.Group("/locations")
 		{
 			locations.GET("/countries/:country_code/provinces", placeholderHandler)
 			locations.GET("/provinces/:province_code", placeholderHandler)
@@ -148,7 +196,7 @@ func SetupRouter(
 		}
 
 		// Currencies
-		currencies := v1.Group("/currencies")
+		currencies := systemConfig.Group("/currencies")
 		{
 			currencies.GET("", placeholderHandler)
 			currencies.GET("/:code", placeholderHandler)

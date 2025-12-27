@@ -76,14 +76,26 @@ func main() {
 	// Initialize repositories
 	appComponentRepo := repository.NewAppComponentRepository(mongoClient.Database())
 	countryRepo := repository.NewCountryRepository(mongoClient.Database())
+	configRepo := repository.NewConfigRepository(mongoClient.Database())
+	secretRepo := repository.NewSecretRepository(mongoClient.Database())
+	watchRepo := repository.NewWatchRepository(mongoClient.Database())
 
 	// Initialize services
 	appComponentService := service.NewAppComponentService(appComponentRepo, redisClient, log)
 	countryService := service.NewCountryService(countryRepo, redisClient, log)
+	configService := service.NewConfigService(configRepo, redisClient, log)
+	secretService, err := service.NewSecretService(secretRepo, redisClient, log)
+	if err != nil {
+		log.Fatal("Failed to initialize secret service", zap.Error(err))
+	}
+	watchService := service.NewWatchService(watchRepo, log)
 
 	// Initialize handlers
 	appComponentHandler := handler.NewAppComponentHandler(appComponentService, log)
 	countryHandler := handler.NewCountryHandler(countryService, log)
+	configHandler := handler.NewConfigHandler(configService, log)
+	secretHandler := handler.NewSecretHandler(secretService, log)
+	watchHandler := handler.NewWatchHandler(watchService, log)
 
 	// Start gRPC server
 	grpcPort := os.Getenv("SYSTEM_CONFIG_SERVICE_PORT")
@@ -97,7 +109,7 @@ func main() {
 	if httpPort == "" {
 		httpPort = "8085"
 	}
-	startHTTPServer(appComponentHandler, countryHandler, log, httpPort)
+	startHTTPServer(appComponentHandler, countryHandler, configHandler, secretHandler, watchHandler, log, httpPort)
 }
 
 func startGRPCServer(log *logger.Logger, port string) {
@@ -119,9 +131,9 @@ func startGRPCServer(log *logger.Logger, port string) {
 	}
 }
 
-func startHTTPServer(appComponentHandler *handler.AppComponentHandler, countryHandler *handler.CountryHandler, log *logger.Logger, port string) {
+func startHTTPServer(appComponentHandler *handler.AppComponentHandler, countryHandler *handler.CountryHandler, configHandler *handler.ConfigHandler, secretHandler *handler.SecretHandler, watchHandler *handler.WatchHandler, log *logger.Logger, port string) {
 	gin.SetMode(gin.ReleaseMode)
-	r := router.SetupRouter(appComponentHandler, countryHandler, log)
+	r := router.SetupRouter(appComponentHandler, countryHandler, configHandler, secretHandler, watchHandler, log)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
