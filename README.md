@@ -628,6 +628,38 @@ db.watch_subscriptions.createIndex({ "subscriberId": 1, "tenantId": 1 });
 db.watch_subscriptions.createIndex({ "serviceName": 1, "status": 1 });
 ```
 
+## MongoDB Naming Conventions
+
+This service strictly adheres to MongoDB design best practices:
+
+### Collection Names
+- **Format**: `snake_case`
+- **Examples**: `app_components`, `countries`, `currencies`, `roles`
+- **Reasoning**: Collection names represent entities and are typically lowercase with underscores separating words, following MongoDB conventions
+
+### Field Names
+- **Format**: `camelCase`
+- **Examples**: `tenantId`, `createdAt`, `updatedAt`, `nativeName`, `phoneCode`
+- **Reasoning**: MongoDB field names use camelCase for better JavaScript/JSON integration and consistency with MongoDB's internal naming
+- **Special cases**: 
+  - `_id` remains as MongoDB's standard primary key
+  - JSON API responses use `snake_case` for consistency with REST API conventions, while MongoDB storage uses `camelCase`
+
+### Field Naming Examples
+```javascript
+// Correct MongoDB document structure
+{
+  "_id": ObjectId("..."),
+  "tenantId": "tenant-123",
+  "code": "COMP001",
+  "name": "My Component",
+  "createdAt": ISODate("2024-01-01T00:00:00Z"),
+  "updatedAt": ISODate("2024-01-01T00:00:00Z"),
+  "isActive": true,
+  "phoneCode": "+84"
+}
+```
+
 ## Best Practices
 
 ### Configuration Management
