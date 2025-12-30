@@ -63,6 +63,13 @@ This service provides centralized, secure, and dynamic management of:
 - **Message Queue**: RabbitMQ
 - **gRPC**: For inter-service communication
 
+## Platform Support
+
+This service runs on **Linux**, **macOS**, and **Windows**.
+
+- **Windows Users**: See the dedicated [Windows Development Guide](docs/WINDOWS_SETUP.md) for setup instructions and troubleshooting.
+- **Linux/macOS Users**: Use the standard `Makefile` commands documented below.
+
 ## Architecture
 
 For detailed architecture diagrams, see [docs/diagrams/](docs/diagrams/).
@@ -210,18 +217,62 @@ REQUEST_TIMEOUT_SECONDS=30
 - MongoDB
 - Redis
 
+> **Windows Users**: See [Windows Development Guide](docs/WINDOWS_SETUP.md) for detailed Windows-specific setup instructions.
+
 ### Build and Run
 
+**Linux/macOS:**
 ```bash
 # Install dependencies
-cd services/system-config-service
 go mod download
 
 # Build
-go build -o bin/system-config-service ./cmd/main.go
+make build
 
 # Run
+make run
+```
+
+**Windows (PowerShell):**
+```powershell
+# Install dependencies
+.\build.ps1 deps
+
+# Build
+.\build.ps1 build
+
+# Run
+.\build.ps1 run
+```
+
+**Windows (Command Prompt):**
+```cmd
+:: Install dependencies
+build.bat deps
+
+:: Build
+build.bat build
+
+:: Run
+build.bat run
+```
+
+**Manual (cross-platform):**
+```bash
+# Install dependencies
+go mod download
+
+# Build (Linux/macOS)
+go build -o bin/system-config-service ./cmd/main.go
+
+# Build (Windows)
+go build -o bin/system-config-service.exe ./cmd/main.go
+
+# Run (Linux/macOS)
 ./bin/system-config-service
+
+# Run (Windows)
+bin\system-config-service.exe
 ```
 
 ## Running with Docker
@@ -239,17 +290,54 @@ docker run -p 8085:8085 -p 50055:50055 \
 
 ## Testing
 
+**Linux/macOS:**
 ```bash
 # Run all tests
-go test ./...
+make test
 
 # Run tests with coverage
+make test-coverage
+
+# Or manually
+go test ./...
 go test -cover ./...
 
 # Generate coverage report
 go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
+```
 
+**Windows (PowerShell):**
+```powershell
+# Run all tests
+.\build.ps1 test
+
+# Run tests with coverage (opens report in browser)
+.\build.ps1 test-coverage
+
+# Or manually
+go test .\...
+go test -cover .\...
+
+# Generate coverage report
+go test -coverprofile=coverage.out .\...
+go tool cover -html=coverage.out -o coverage.html
+```
+
+**Windows (Command Prompt):**
+```cmd
+:: Run all tests
+build.bat test
+
+:: Run tests with coverage
+build.bat test-coverage
+
+:: Or manually
+go test .\...
+```
+
+**Cross-platform:**
+```bash
 # Run specific test
 go test -v -run TestConfigService ./internal/service/
 

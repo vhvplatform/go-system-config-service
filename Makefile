@@ -6,6 +6,9 @@ DOCKER_REGISTRY ?= ghcr.io/vhvplatform
 VERSION ?= $(shell git describe --tags --always --dirty)
 GO_VERSION := 1.25.5
 
+# Note: For Windows users, use build.bat or build.ps1 instead of this Makefile
+# See docs/WINDOWS_SETUP.md for Windows-specific instructions
+
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
