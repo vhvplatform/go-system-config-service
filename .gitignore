@@ -1,3 +1,7 @@
+# ====================
+# Server (Go/Golang)
+# ====================
+
 # Binaries
 *.exe
 *.exe~
@@ -18,6 +22,90 @@ coverage.html
 
 # Dependencies
 vendor/
+
+# ====================
+# Client (ReactJS)
+# ====================
+
+# Dependencies
+client/node_modules/
+client/.pnp
+client/.pnp.js
+
+# Testing
+client/coverage/
+
+# Production
+client/build/
+client/dist/
+
+# Misc
+client/.DS_Store
+client/.env.local
+client/.env.development.local
+client/.env.test.local
+client/.env.production.local
+
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+# ====================
+# Flutter (Mobile)
+# ====================
+
+# Flutter/Dart/Pub related
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/.packages
+flutter/.pub-cache/
+flutter/.pub/
+flutter/build/
+
+# Android related
+flutter/android/**/gradle-wrapper.jar
+flutter/android/.gradle
+flutter/android/captures/
+flutter/android/gradlew
+flutter/android/gradlew.bat
+flutter/android/local.properties
+flutter/android/**/GeneratedPluginRegistrant.java
+flutter/android/key.properties
+flutter/android/.idea
+flutter/android/**/build/
+
+# iOS/XCode related
+flutter/ios/**/*.mode1v3
+flutter/ios/**/*.mode2v3
+flutter/ios/**/*.moved-aside
+flutter/ios/**/*.pbxuser
+flutter/ios/**/*.perspectivev3
+flutter/ios/**/*sync/
+flutter/ios/**/.sconsign.dblite
+flutter/ios/**/.tags*
+flutter/ios/**/.vagrant/
+flutter/ios/**/DerivedData/
+flutter/ios/**/Icon?
+flutter/ios/**/Pods/
+flutter/ios/**/.symlinks/
+flutter/ios/**/profile
+flutter/ios/**/xcuserdata
+flutter/ios/.generated/
+flutter/ios/Flutter/App.framework
+flutter/ios/Flutter/Flutter.framework
+flutter/ios/Flutter/Flutter.podspec
+flutter/ios/Flutter/Generated.xcconfig
+flutter/ios/Flutter/app.flx
+flutter/ios/Flutter/app.zip
+flutter/ios/Flutter/flutter_assets/
+flutter/ios/Flutter/flutter_export_environment.sh
+flutter/ios/ServiceDefinitions.json
+flutter/ios/Runner/GeneratedPluginRegistrant.*
+
+# ====================
+# Common/Shared
+# ====================
 
 # IDE
 .idea/
